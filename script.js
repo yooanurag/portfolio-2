@@ -135,32 +135,82 @@
   });
 })();
 
-// Production portrait-photo carousel: one card, arrow controls, no separate tiles.
-document.querySelectorAll('[data-carousel]').forEach(carousel => {
-  const slides = [...carousel.querySelectorAll('.production-slide')];
-  const counter = carousel.querySelector('.production-counter');
-  const prev = carousel.querySelector('.production-prev');
-  const next = carousel.querySelector('.production-next');
-  let active = 0;
-  const show = (index) => {
-    active = (index + slides.length) % slides.length;
-    slides.forEach((slide, i) => slide.classList.toggle('is-active', i === active));
-    if (counter) counter.textContent = `${String(active + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
-  };
-  prev?.addEventListener('click', () => show(active - 1));
-  next?.addEventListener('click', () => show(active + 1));
-});
 
-// Event arrow expands/collapses smoothly, then scrolls the selected event into view.
-document.querySelectorAll('.gallery-toggle').forEach(button => {
-  button.addEventListener('click', () => {
-    const card = button.closest('.event-gallery-card');
-    if (!card) return;
-    const expanded = card.classList.toggle('gallery-expanded');
-    button.setAttribute('aria-expanded', String(expanded));
-    button.innerHTML = expanded ? 'Hide gallery <span>−</span>' : 'View gallery <span>↗</span>';
-    if (expanded) {
-      window.setTimeout(() => card.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'}), 100);
-    }
+// Unified production carousel: photos and videos share one 9:16 stage.
+(() => {
+  document.querySelectorAll('[data-carousel]').forEach(carousel => {
+    const slides = [...carousel.querySelectorAll('.production-slide')];
+    const counter = carousel.querySelector('.production-counter');
+    const prev = carousel.querySelector('.production-prev');
+    const next = carousel.querySelector('.production-next');
+    if (!slides.length) return;
+    let active = Math.max(0, slides.findIndex(slide => slide.classList.contains('is-active')));
+    const stopVideos = except => slides.forEach(slide => slide.querySelectorAll('video').forEach(video => {
+      if (video !== except) { video.pause(); try { video.currentTime = video.currentTime; } catch (_) {} }
+    }));
+    const show = (index, focusControl = false) => {
+      stopVideos();
+      active = (index + slides.length) % slides.length;
+      slides.forEach((slide, i) => {
+        const current = i === active;
+        slide.classList.toggle('is-active', current);
+        slide.setAttribute('aria-hidden', String(!current));
+        slide.querySelectorAll('button,video,a,[tabindex]').forEach(el => { el.tabIndex = current ? 0 : -1; });
+        if (!current) slide.querySelectorAll('video').forEach(video => { video.pause(); });
+      });
+      if (counter) {
+        counter.textContent = `${String(active + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+        counter.setAttribute('aria-label', `Item ${active + 1} of ${slides.length}`);
+      }
+      carousel.dataset.activeIndex = String(active);
+      if (focusControl) (active === 0 ? prev : next)?.focus();
+    };
+    prev?.addEventListener('click', () => show(active - 1));
+    next?.addEventListener('click', () => show(active + 1));
+    carousel.tabIndex = 0;
+    carousel.addEventListener('keydown', event => {
+      if (event.target.matches('video,button,input,a')) return;
+      if (event.key === 'ArrowLeft') { event.preventDefault(); show(active - 1); }
+      if (event.key === 'ArrowRight') { event.preventDefault(); show(active + 1); }
+    });
+    let touchX = null;
+    carousel.addEventListener('touchstart', event => { touchX = event.changedTouches[0].clientX; }, {passive:true});
+    carousel.addEventListener('touchend', event => {
+      if (touchX === null) return;
+      const delta = event.changedTouches[0].clientX - touchX;
+      if (Math.abs(delta) > 45) show(active + (delta < 0 ? 1 : -1));
+      touchX = null;
+    }, {passive:true});
+    show(active);
   });
-});
+})();
+
+// Event-specific animated galleries with a unique panel per event and safe smooth scrolling.
+(() => {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.event-gallery-card').forEach((card, index) => {
+    const button = card.querySelector('.gallery-toggle');
+    const panel = card.querySelector('.event-gallery-thumbs');
+    if (!button || !panel) return;
+    if (!card.id) card.id = `event-gallery-${String(index + 1).padStart(2, '0')}`;
+    if (!panel.id) panel.id = `${card.id}-photos`;
+    button.setAttribute('aria-controls', panel.id);
+    const setOpen = open => {
+      card.classList.toggle('gallery-expanded', open);
+      button.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      button.setAttribute('aria-label', `${open ? 'Collapse' : 'Expand'} photo gallery for ${card.querySelector('h3')?.textContent.trim() || 'this event'}`);
+      const icon = button.querySelector('span');
+      button.childNodes[0].textContent = open ? 'Hide gallery ' : 'View gallery ';
+      if (icon) icon.textContent = open ? '−' : '↗';
+    };
+    setOpen(false);
+    button.addEventListener('click', () => {
+      const opening = button.getAttribute('aria-expanded') !== 'true';
+      setOpen(opening);
+      if (opening) {
+        window.requestAnimationFrame(() => card.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'start'}));
+      }
+    });
+  });
+})();
