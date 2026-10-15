@@ -108,7 +108,11 @@
 
         <!-- BOX 3: landscape stats image -->
         <article class="broadcast-feature reveal broadcast-stats-card">
-          <button class="media-open image-open" type="button" data-full="Broadcasting/stats-photo.png" aria-label="Open tournament statistics photo"><img src="Broadcasting/stats-photo.png" alt="Tournament stats and broadcast data workflow" loading="lazy" onerror="this.closest('.broadcast-stats-card').classList.add('media-missing');this.remove()"><div class="media-fallback"><span>STATS PHOTO</span><strong>Stats & match data</strong><small>Broadcasting/stats-photo.png</small></div></button>
+          <div class="production-carousel broadcast-production-carousel" data-broadcast-carousel>
+            <div class="production-slide is-active"><button class="media-open image-open" type="button" data-full="Broadcasting/stats-photo.png" aria-label="Open tournament statistics photo 1"><img src="Broadcasting/stats-photo1.png" alt="Tournament stats and broadcast data workflow, photo 1" loading="lazy" onerror="this.closest('.production-slide').classList.add('media-missing');this.querySelector('img').remove()"><div class="media-fallback"><span>STATS PHOTO 1</span><strong>Stats & match data</strong><small>Broadcasting/stats-photo1.png</small></div></button></div>
+            <div class="production-slide"><button class="media-open image-open" type="button" data-full="Broadcasting/stats-photo-02.png" aria-label="Open tournament statistics photo 2"><img src="Broadcasting/stats-photo2.png" alt="Tournament stats and broadcast data workflow, photo 2" loading="lazy" onerror="this.closest('.production-slide').classList.add('media-missing');this.querySelector('img').remove()"><div class="media-fallback"><span>STATS PHOTO 1</span><strong>Stats & match data</strong><small>Broadcasting/stats-photo1.png</small></div></button></div>
+            <div class="production-carousel-controls"><button type="button" class="production-prev" aria-label="Previous production photo">←</button><span class="production-counter" aria-live="polite">01 / 02</span><button type="button" class="production-next" aria-label="Next production photo">→</button></div>
+          </div>
           <div class="broadcast-caption"><span>DATA & OBSERVATION</span><h3>Stats operations</h3><p>Match data, score updates, and production coordination.</p></div>
         </article>
       </div>
